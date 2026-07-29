@@ -1,0 +1,1 @@
+"""MCP server package exposing travel tools to AI agents."""
