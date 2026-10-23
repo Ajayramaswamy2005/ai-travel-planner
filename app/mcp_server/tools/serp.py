@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from .._http import http_get
+from ._mock import mock_delay, stable_hash
 from ...config import settings
 
 logger = logging.getLogger(__name__)
@@ -21,12 +21,12 @@ def _serp_enabled() -> bool:
 async def web_search(query: str, *, num: int = 5) -> list[dict[str, Any]]:
     """Search the web and return a list of result dicts."""
     if not _serp_enabled():
-        await asyncio.sleep(0.01)
+        await mock_delay()
         return [
             {
                 "title": f"{query} - result {i + 1}",
                 "snippet": f"Mock travel info snippet for '{query}' (#{i + 1}).",
-                "link": f"https://example.com/{abs(hash(query)) % 9999}/{i}",
+                "link": f"https://example.com/{stable_hash(query) % 9999}/{i}",
                 "mock": True,
             }
             for i in range(num)

@@ -30,6 +30,8 @@ class BaseAgent:
 
     def _ctx(self, state: PlanState) -> str:
         req = state.request
+        earlier = state.earlier_user_requests()
+        history = f"\nEarlier requests this session: {' | '.join(earlier)}" if earlier else ""
         return (
             f"Destination: {req.destination or 'unknown'}\n"
             f"Days: {req.days}\n"
@@ -37,4 +39,5 @@ class BaseAgent:
             f"Budget: {req.budget if req.budget is not None else 'not specified'} "
             f"{req.currency}\n"
             f"Preferences: {', '.join(req.preferences) or 'none'}"
+            f"{history}"
         )

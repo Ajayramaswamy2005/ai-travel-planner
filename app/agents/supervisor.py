@@ -66,7 +66,10 @@ class SupervisorAgent:
             return "No agent outputs were produced."
 
         joined = "\n\n".join(sections)
+        earlier = state.earlier_user_requests()
+        history = f"Earlier requests this session: {' | '.join(earlier)}\n\n" if earlier else ""
         prompt = (
+            f"{history}"
             f"Travel request:\n{state.request.model_dump_json(indent=2)}\n\n"
             f"Specialist agent reports:\n{joined}\n\n"
             f"Compose a single, cohesive travel plan for the user in markdown with clear "

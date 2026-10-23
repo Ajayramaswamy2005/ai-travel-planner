@@ -6,13 +6,13 @@ returns deterministic coordinates and points of interest.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 import httpx
 
 from .._http import http_get
+from ._mock import mock_delay, stable_hash
 from ...config import settings
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,9 @@ def _maps_enabled() -> bool:
 async def geocode(place: str) -> dict[str, Any]:
     """Resolve a place name to lat/lng and formatted address."""
     if not _maps_enabled():
-        await asyncio.sleep(0.01)
+        await mock_delay()
         # Deterministic mock based on the place name hash.
-        h = abs(hash(place)) % 90
+        h = stable_hash(place) % 90
         return {
             "place": place,
             "formatted": f"{place}",
@@ -58,12 +58,12 @@ async def geocode(place: str) -> dict[str, Any]:
 async def directions(origin: str, destination: str) -> dict[str, Any]:
     """Driving directions between two places."""
     if not _maps_enabled():
-        await asyncio.sleep(0.01)
+        await mock_delay()
         return {
             "origin": origin,
             "destination": destination,
-            "distance_km": round(abs(hash(origin + destination)) % 200 + 1, 1),
-            "duration_min": round(abs(hash(destination)) % 180 + 10, 1),
+            "distance_km": round(stable_hash(origin + destination) % 200 + 1, 1),
+            "duration_min": round(stable_hash(destination) % 180 + 10, 1),
             "mock": True,
         }
 
@@ -88,8 +88,8 @@ async def directions(origin: str, destination: str) -> dict[str, Any]:
 async def nearby_places(place: str, *, radius_m: int = 1500) -> list[dict[str, Any]]:
     """Find notable nearby places (attractions/restaurants/hotels)."""
     if not _maps_enabled():
-        await asyncio.sleep(0.01)
-        seed = abs(hash(place)) % 5
+        await mock_delay()
+        seed = stable_hash(place) % 5
         types = ["attraction", "restaurant", "museum", "park", "hotel"]
         return [
             {

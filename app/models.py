@@ -51,3 +51,8 @@ class PlanState(BaseModel):
 
     def add_message(self, role: str, content: str) -> None:
         self.messages.append({"role": role, "content": content})
+
+    def earlier_user_requests(self, limit: int = 3) -> list[str]:
+        """User messages from previous turns of this session (shared memory)."""
+        user = [m["content"] for m in self.messages if m.get("role") == "user"]
+        return user[:-1][-limit:]

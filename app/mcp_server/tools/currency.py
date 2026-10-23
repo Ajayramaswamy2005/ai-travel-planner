@@ -5,16 +5,16 @@ Uses the free exchangerate.host API when key is present; mock otherwise.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from .._http import http_get
+from ._mock import mock_delay
 from ...config import settings
 
 logger = logging.getLogger(__name__)
 
-LATEST_URL = "https://api.exchangerate.host/latest"
+CONVERT_URL = "https://api.exchangerate.host/convert"
 SYMBOLS_URL = "https://api.exchangerate.host/symbols"
 
 
@@ -41,7 +41,7 @@ async def convert_currency(amount: float, from_currency: str, to_currency: str) 
     """Convert an amount between two currencies."""
     f, t = from_currency.upper(), to_currency.upper()
     if not _currency_enabled() or not settings.currency_api_key:
-        await asyncio.sleep(0.01)
+        await mock_delay()
         rate = _MOCK_RATES.get(t, 1.0) / _MOCK_RATES.get(f, 1.0)
         return {
             "from": f,
@@ -53,7 +53,7 @@ async def convert_currency(amount: float, from_currency: str, to_currency: str) 
         }
 
     params = {"from": f, "to": t, "amount": amount, "access_key": settings.currency_api_key}
-    data = await http_get(LATEST_URL, params=params)
+    data = await http_get(CONVERT_URL, params=params)
     return {
         "from": f,
         "to": t,
@@ -67,7 +67,7 @@ async def convert_currency(amount: float, from_currency: str, to_currency: str) 
 async def list_currencies() -> list[str]:
     """Return supported currency codes."""
     if not _currency_enabled() or not settings.currency_api_key:
-        await asyncio.sleep(0.01)
+        await mock_delay()
         return list(_MOCK_RATES.keys())
     data = await http_get(SYMBOLS_URL, params={"access_key": settings.currency_api_key})
     return list((data.get("symbols") or {}).keys())

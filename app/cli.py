@@ -19,6 +19,7 @@ console = Console()
 app = typer.Typer(help="AI Multi-Agent Travel Planner CLI", add_completion=False)
 
 logging.basicConfig(level=settings.log_level)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 @app.command()
@@ -70,13 +71,48 @@ def chat() -> None:
 
 
 @app.command()
-def tools() -> None:
+def tools(
+    mcp: bool = typer.Option(False, "--mcp", help="Ask the MCP server instead of the local registry."),
+) -> None:
     """List the MCP tools available to the agents."""
-    from .mcp_server.registry import TOOL_REGISTRY
+    if mcp:
+        from .mcp_server.client import list_tools_mcp
+
+        names = asyncio.run(list_tools_mcp())
+    else:
+        from .mcp_server.registry import TOOL_REGISTRY
+
+        names = list(TOOL_REGISTRY)
 
     console.print("[bold]MCP Tools[/bold]")
-    for name in TOOL_REGISTRY:
+    for name in names:
         console.print(f"  - {name}")
+
+
+@app.command()
+def bench(
+    destination: str = typer.Option("Paris, France", "--destination", "-d"),
+    days: int = typer.Option(4, "--days"),
+    runs: int = typer.Option(5, "--runs", help="Measured runs per mode."),
+    tool_latency_ms: int | None = typer.Option(None, "--tool-latency-ms", help="Mock tool latency."),
+    llm_latency_ms: int | None = typer.Option(None, "--llm-latency-ms", help="Mock LLM latency."),
+) -> None:
+    """Compare end-to-end latency of parallel vs sequential execution."""
+    from .benchmark import benchmark
+
+    if tool_latency_ms is not None:
+        settings.mock_tool_latency_ms = tool_latency_ms
+    if llm_latency_ms is not None:
+        settings.mock_llm_latency_ms = llm_latency_ms
+
+    request = TravelRequest(destination=destination, days=days, budget=1500)
+    result = asyncio.run(benchmark(request, runs=runs))
+
+    mode = "mock" if settings.use_mock_fallback else "live APIs"
+    console.print(f"[bold]Benchmark[/bold] ({mode}, transport={settings.tool_transport}, runs={runs})")
+    console.print(f"  sequential: {result.sequential_mean:.2f}s mean")
+    console.print(f"  parallel:   {result.parallel_mean:.2f}s mean")
+    console.print(f"  [green]latency reduction: {result.reduction_pct:.1f}%[/green]")
 
 
 if __name__ == "__main__":

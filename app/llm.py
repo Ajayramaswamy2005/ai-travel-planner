@@ -42,6 +42,7 @@ async def call_llm(prompt: str, *, system: str = "") -> str:
     """
     if settings.use_mock_fallback or not settings.groq_api_key:
         logger.debug("LLM mock fallback active")
+        await asyncio.sleep(settings.mock_llm_latency_ms / 1000)
         return _mock_response(prompt, system=system)
 
     loop = asyncio.get_running_loop()
@@ -64,7 +65,6 @@ async def call_llm(prompt: str, *, system: str = "") -> str:
 
 def _mock_response(prompt: str, *, system: str = "") -> str:
     """Deterministic stand-in for an LLM completion."""
-    # Tiny simulated latency so async paths are exercised.
     snippet = prompt.strip().replace("\n", " ")
     if len(snippet) > 160:
         snippet = snippet[:160] + "..."

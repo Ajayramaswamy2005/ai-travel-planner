@@ -31,6 +31,15 @@ class Settings(BaseSettings):
     # Groq model
     groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
 
+    # How agents reach the tools: "local" calls the registry in-process, "mcp"
+    # goes through the MCP server (MCP_SERVER_URL if set, else spawned over stdio).
+    tool_transport: Literal["local", "mcp"] = Field(default="local", alias="TOOL_TRANSPORT")
+    mcp_server_url: str = Field(default="", alias="MCP_SERVER_URL")
+
+    # Simulated latency for mock tools/LLM so mock runs behave like network calls.
+    mock_tool_latency_ms: int = Field(default=10, alias="MOCK_TOOL_LATENCY_MS")
+    mock_llm_latency_ms: int = Field(default=0, alias="MOCK_LLM_LATENCY_MS")
+
     @property
     def use_mock_fallback(self) -> bool:
         """True when mocks should be used (explicit flag OR all keys missing)."""

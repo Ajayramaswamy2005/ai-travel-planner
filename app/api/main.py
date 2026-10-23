@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from ..agents.supervisor import parse_request
 from ..config import settings
-from ..graph.workflow import plan_from_text, run_plan
+from ..graph.workflow import plan_from_text, reset_session, run_plan
 from ..memory import memory
 from ..models import PlanState, TravelRequest
 
@@ -139,6 +139,7 @@ async def get_memory(session_id: str) -> dict[str, Any]:
 @app.post("/memory/{session_id}/reset")
 async def reset_memory(session_id: str) -> dict[str, str]:
     memory.reset(session_id)
+    reset_session(session_id)
     return {"session_id": session_id, "status": "reset"}
 
 

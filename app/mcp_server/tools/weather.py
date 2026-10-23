@@ -6,11 +6,11 @@ plausible weather data.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from .._http import http_get
+from ._mock import mock_delay, stable_hash
 from ...config import settings
 
 logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ def _mock_state(seed: int) -> dict[str, Any]:
 async def current_weather(place: str) -> dict[str, Any]:
     """Current weather for a place."""
     if not _weather_enabled():
-        await asyncio.sleep(0.01)
-        return {"place": place, **_mock_state(abs(hash(place)) % 5), "mock": True}
+        await mock_delay()
+        return {"place": place, **_mock_state(stable_hash(place) % 5), "mock": True}
 
     params = {"q": place, "appid": settings.weather_api_key, "units": "metric"}
     data = await http_get(CURRENT_URL, params=params)
@@ -57,8 +57,8 @@ async def forecast(place: str, *, days: int = 3) -> list[dict[str, Any]]:
     """Multi-day forecast (clamped to 5)."""
     days = max(1, min(days, 5))
     if not _weather_enabled():
-        await asyncio.sleep(0.01)
-        base = abs(hash(place)) % 5
+        await mock_delay()
+        base = stable_hash(place) % 5
         return [
             {"day": i + 1, "place": place, **_mock_state((base + i) % 5), "mock": True}
             for i in range(days)
